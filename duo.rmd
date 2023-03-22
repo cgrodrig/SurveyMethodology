@@ -1,0 +1,165 @@
+---
+title: "Duo_survey"
+author: "CGR"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Libraries
+```{r message=FALSE, warning=FALSE}
+library(haven)
+library(lubridate)
+library(ggpubr)
+library(DataExplorer)
+library(readr)
+library(dplyr)
+library(ggplot2)
+library(kableExtra)
+library(corrplot)
+library(tidyverse)
+library(stringr)
+library(GGally)
+library(gridExtra)
+library(reshape)
+library(groupdata2)
+library(skimr)
+library(patchwork)
+library(reshape)
+library(sjPlot)
+library(jtools)
+library(zoo)
+library(data.table)
+library(car)
+library(tseries)
+library(forecast)
+library(MASS)
+```
+
+# Data Import
+```{r}
+Student_survey <- read_sav("survey_methodology/Student_survey.sav")
+head(Student_survey)
+```
+
+#Data Subset 
+```{r}
+Data0 <- Student_survey %>%
+  mutate(
+    gender = as.factor(Q3),
+    birthyear = as.factor(Q4),
+    school = as.factor(Q5),
+    undergrad = as.factor(Q6),
+    marital_status = as.factor(Q7),
+    children = as.factor(Q8),
+    house_location = as.factor(Q9),
+    start_business = as.factor(Q261R1),
+    risky = as.factor(Q262R2),
+    time_consuming = as.factor(Q263R3),
+    rewarding = as.factor(Q264R4),
+    time_control = as.factor(Q265R5),
+    UI_support = as.factor(Q266R6),
+    high_quality = as.factor(Q267R7),
+    pay = as.factor(Q268R8)
+  ) %>%
+  summarize(
+    Response_ID,
+    TS,
+    Language,
+    gender,
+    birthyear,
+    school,
+    undergrad,
+    marital_status,
+    children,
+    house_location,
+    start_business,
+    risky,
+    time_consuming,
+    rewarding,
+    time_control,
+    UI_support,
+    high_quality,
+    pay
+  )
+
+
+```
+
+# factors & levels
+```{r}
+Data0 <- Data0 %>%
+  mutate(
+    gender = factor(
+      case_when (
+        gender == "1" ~ "man",
+        gender == "2" ~ "woman",
+        gender == "3" ~ "Genderqueer/other"
+      ) %>%
+        mutate(
+          school = factor(
+            case_when (
+              school == "1" ~ "School of Social Sciences",
+              school == "2" ~ "School of Health Sciences",
+              school == "3" ~ "School of Humanities",
+              school == "4" ~ "School of Education",
+              school == "5" ~ "School of Engineering and Natural Sciences",
+              school == "6" ~ "more than 1",
+            )))
+            
+
+
+
+#levels
+levels(Data_c$Language)
+levels(Data_c$gender)
+levels(Data_c$school)
+levels(Data_c$undergrad)
+levels(Data_c$marital_status)
+levels(Data_c$children)
+levels(Data_c$house_location)
+levels(Data_c$start_business)
+levels(Data_c$risky)
+levels(Data_c$time_consuming)
+levels(Data_c$rewarding)
+levels(Data_c$time_control)
+levels(Data_c$UI_support)
+levels(Data_c$high_quality)
+levels(Data_c$pay)
+```
+
+# Missing Data
+```{r}
+Data0 %>%
+  plot_missing()
+```
+
+# Outliers
+```{r}
+boxplot(Data0$start_business)
+boxplot(Data0$risky)
+boxplot(Data0$time_consuming)
+boxplot(Data0$rewarding)
+boxplot(Data0$time_control)
+boxplot(Data0$UI_support)
+boxplot(Data0$high_quality)
+boxplot(Data0$pay)
+boxplot(Data0$UI_support)
+```
+
+# Histograms
+```{r}
+hist(Data0$start_business)
+hist(Data0$risky)
+hist(Data0$time_consuming)
+hist(Data0$rewarding)
+hist(Data0$time_control)
+hist(Data0$UI_support)
+hist(Data0$high_quality)
+hist(Data0$pay)
+hist(Data0$UI_support)
+```
+

@@ -1,0 +1,115 @@
+---
+title: "Survey_Methodology"
+author: "CGR"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries 
+```{r}
+library(psy)
+library(ggplot2)
+```
+
+We simulate an observation of 300 individuals. X and Y are latent variables that are related to each other.
+
+```{r}
+
+n <- 300
+set.seed(3689)
+X <- rnorm(n = n, mean = 1000, sd = 200)
+Y <- (X + rnorm(n = n, mean = 1000, sd = 200)) / 1.45
+```
+
+```{r}
+sd(Y)
+sd(X)
+
+cor(X, Y)
+# correlation should be about  0.60 -  0.70 
+
+plot(X, Y)
+hist(Y)
+hist(X)
+```
+
+
+We try to approach X and Y by measuring them with the help of 12 variables, X1-X6 and Y1-
+Y6. These variables are combined/summed up in Mx and My. 
+
+e  is  the  error  that  is  added  to  each  of  the  X1-X6  and  Y1-Y6  variables,  as  these  are  only 
+estimates of the real variables. 
+
+```{r}
+#e = the error that is added to each x1, x2, x3, x4, x5, x6 and y1, y2, y3, y4, y5 and y6.  
+# Measured var ----
+# e, error,  villa
+error <- c(1, 50, 200, 400, 1000)
+
+#Try different values of e (1, 50, 200, 400, 1000)
+```
+
+
+With the help of 5 samples we are going to explore what happens to the standard deviation of X, Y, Mx and My, the correlation between Mx and MY and the Cronbach‘s alpha for Mx and MY when the e value changes. 
+
+```{r}
+SM_table= data.frame(e=error, corr1_My_Y=0, corr2_Mx_x=0, corr3_X_Y=0, corr4_My_X=0, corr5_X_Mx=0,corr6_Mx_My=0, cb_x=0, cb_y=0, cb_Mx_My=0)
+
+for(i in 1:5) {
+e = error[i] 
+x1 <- X + rnorm(n = n, mean = 0, sd = e)
+x2 <- X + rnorm(n = n, mean = 0, sd = e)
+x3 <- X + rnorm(n = n, mean = 0, sd = e)
+x4 <- X + rnorm(n = n, mean = 0, sd = e)
+x5 <- X + rnorm(n = n, mean = 0, sd = e)
+x6 <- X + rnorm(n = n, mean = 0, sd = e)
+
+y1 <- Y + rnorm(n = n, mean = 0, sd = e)
+y2 <- Y + rnorm(n = n, mean = 0, sd = e)
+y3 <- Y + rnorm(n = n, mean = 0, sd = e)
+y4 <- Y + rnorm(n = n, mean = 0, sd = e)
+y5 <- Y + rnorm(n = n, mean = 0, sd = e)
+y6 <- Y + rnorm(n = n, mean = 0, sd = e)
+
+Mx <- (x1 + x2 + x3 + x4 + x5 + x6) / 6
+My <- (y1 + y2 + y3 + y4 + y5 + y6) / 6
+
+SM_table[i,"corr1_My_Y"]=cor(My, Y)
+SM_table[i,"corr2_Mx_x"]=cor(Mx, X)
+SM_table[i,"corr3_X_Y"]=cor(X, Y)
+SM_table[i,"corr4_My_X"]=cor(My, X)
+SM_table[i,"corr5_X_Mx"]=cor(X, Mx)
+SM_table[i,"corr6_Mx_My"]=cor(Mx, My)
+
+print(plot(Mx, My))
+
+collectXs <- data.frame(x1, x2, x3, x4, x5, x6)
+collectYs <- data.frame(y1, y2, y3, y4, y5, y6)
+
+collect <- data.frame(Mx, My)
+SM_table[i,"cb_Mx_My"]=cronbach(collect)$alpha
+
+SM_table[i,"cb_x"]=cronbach(collectXs)$alpha
+SM_table[i,"cb_y"]=cronbach(collectYs)$alpha
+cor(collectXs, collectYs)
+
+print(hist(Mx))
+}
+  
+  
+```
+
+
+Below you find some of the outcomes of an analysis in R, for different error terms. 
+
+With different values of e, from much lower than 200 to much higher, explore the standard deviations of X, Y,Mx and My, as well as the correlation between Mx and My, the correlation between  X  and  MY,  the  correlation  between  X  and  Mx  and  the  Cronbach‘s  alpha  for  the composed measures Mx and My. 
+
+Create a clear table to report the findings. 
+```{r}
+print(SM_table)
+```
+
