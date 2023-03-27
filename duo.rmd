@@ -39,22 +39,16 @@ library(forecast)
 library(MASS)
 ```
 
-# Data Import
-```{r}
-Student_survey <- read_sav("survey_methodology/Student_survey.sav")
-head(Student_survey)
-```
-
 #Data Subset 
 ```{r}
 Data0 <- Student_survey %>%
-  mutate(
+  dplyr::mutate(
     gender = as.factor(Q3),
-    birthyear = as.factor(Q4),
+    birthage = as.numeric(2023-Q4),
     school = as.factor(Q5),
     undergrad = as.factor(Q6),
     marital_status = as.factor(Q7),
-    children = as.factor(Q8),
+    children = as.numeric(Q8-1),
     house_location = as.factor(Q9),
     start_business = as.factor(Q261R1),
     risky = as.factor(Q262R2),
@@ -65,12 +59,12 @@ Data0 <- Student_survey %>%
     high_quality = as.factor(Q267R7),
     pay = as.factor(Q268R8)
   ) %>%
-  summarize(
+  dplyr::summarize(
     Response_ID,
     TS,
     Language,
     gender,
-    birthyear,
+    birthage,
     school,
     undergrad,
     marital_status,
@@ -89,27 +83,54 @@ Data0 <- Student_survey %>%
 
 ```
 
-# factors & levels
+# class, factors & levels
 ```{r}
-Data0 <- Data0 %>%
-  mutate(
+Data_c <- Data0 %>%
+  dplyr::mutate(
     gender = factor(
       case_when (
         gender == "1" ~ "man",
         gender == "2" ~ "woman",
         gender == "3" ~ "Genderqueer/other"
-      ) %>%
-        mutate(
-          school = factor(
-            case_when (
-              school == "1" ~ "School of Social Sciences",
-              school == "2" ~ "School of Health Sciences",
-              school == "3" ~ "School of Humanities",
-              school == "4" ~ "School of Education",
-              school == "5" ~ "School of Engineering and Natural Sciences",
-              school == "6" ~ "more than 1",
-            )))
-            
+      )
+    ),
+    school = factor(
+      case_when (
+        school == "1" ~ "School of Social Sciences",
+        school == "2" ~ "School of Health Sciences",
+        school == "3" ~ "School of Humanities",
+        school == "4" ~ "School of Education",
+        school == "5" ~ "School of Engineering and Natural Sciences",
+        school == "6" ~ "more than 1"
+      )
+    ),
+    undergrad = factor(
+      case_when (
+        undergrad == "1" ~ "undergraduate",
+        undergrad == "2" ~ "post grad",
+        undergrad == "3" ~ "graduate",
+        undergrad == "4" ~ "PhD"
+      )
+    ),
+    marital_status = factor(
+      case_when (
+        marital_status == "1" ~ "single",
+        marital_status == "2" ~ "cohab_married",
+        marital_status == "3" ~ "divorced",
+        marital_status == "4" ~ "widow"
+      )
+    ),
+    house_location = factor(
+      case_when (
+        house_location == "1" ~ "Reyk",
+        house_location == "2" ~ "suburbs",
+        house_location == "3" ~ "town",
+        house_location == "4" ~ "farm",
+        house_location == "5" ~ "abroad"
+      )
+    )
+  )
+
 
 
 
@@ -133,33 +154,155 @@ levels(Data_c$pay)
 
 # Missing Data
 ```{r}
-Data0 %>%
+Data_c %>%
   plot_missing()
 ```
 
+
+
 # Outliers
 ```{r}
-boxplot(Data0$start_business)
-boxplot(Data0$risky)
-boxplot(Data0$time_consuming)
-boxplot(Data0$rewarding)
-boxplot(Data0$time_control)
-boxplot(Data0$UI_support)
-boxplot(Data0$high_quality)
-boxplot(Data0$pay)
-boxplot(Data0$UI_support)
+boxplot(Data_c$start_business)
+boxplot(Data_c$risky)
+boxplot(Data_c$time_consuming)
+boxplot(Data_c$rewarding)
+boxplot(Data_c$time_control)
+boxplot(Data_c$UI_support)
+boxplot(Data_c$high_quality)
+boxplot(Data_c$pay)
+boxplot(Data_c$UI_support)
 ```
+
 
 # Histograms
 ```{r}
-hist(Data0$start_business)
-hist(Data0$risky)
-hist(Data0$time_consuming)
-hist(Data0$rewarding)
-hist(Data0$time_control)
-hist(Data0$UI_support)
-hist(Data0$high_quality)
-hist(Data0$pay)
-hist(Data0$UI_support)
+Data_c %>% 
+  plot_histogram()
+```
+# Barplots
+```{r fig.height=11, fig.width=11}
+Data_c %>% 
+   plot_bar()
 ```
 
+```{r}
+row.plot <- Data_c %>%
+  mutate(id = row_number()) %>%
+  gather(-id, key = "key", value = "val") %>%
+  mutate(isna = is.na(val)) %>%
+  ggplot(aes(key, id, fill = isna)) +
+    geom_raster(alpha=0.8) +
+    scale_fill_manual(name = "",
+        values = c('green', 'red'),
+        labels = c("Present", "Missing")) +
+    #scale_x_discrete(limits = levels) +
+    labs(x = "Variable",
+           y = "Row Number", title = "Missing values in rows") +
+    coord_flip()
+
+row.plot
+```
+
+
+```{r}
+data_na <- Data_c %>% 
+  #dplyr::select(11:18) %>%
+  mutate_at(vars(start_business, risky, time_consuming, rewarding, time_control, UI_support, high_quality, pay), .funs = as.numeric) %>% 
+  rowwise() %>% 
+  mutate(IsNA = ifelse(all(is.na(c_across(11:18))), "Yes", "No"))
+
+library(janitor)
+
+data_na %>% 
+  tabyl(IsNA, Language)
+
+data_na %>% 
+  tabyl(IsNA, gender)
+
+boxplot(data_na$birthage ~ data_na$IsNA)
+
+library(gtsummary)
+
+data_na %>% 
+  select(-c(Response_ID, TS, 11:18)) %>% 
+  gtsummary::tbl_summary(by = IsNA, ) %>% 
+  add_p()
+  
+```
+
+
+```{r}
+data_na %>% 
+  group_by(IsNA) %>% 
+  summarise(Prop = n()/nrow(.))
+```
+
+
+## Removing NAs
+
+```{r}
+data_no_na <- data_na %>% 
+  filter(IsNA == "No")
+```
+
+
+## Missing data imputation
+
+```{r}
+library(mice)
+
+imp <- mice(data_no_na[, -c(1:2)], m = 5, maxit = 10)
+
+complete_data <- complete(imp)
+
+complete_data %>% 
+  plot_missing()
+```
+
+
+## Ordinal Logistic Regression
+
+```{r}
+complete_data %>% 
+  count(school, sort = T)
+
+final_data <- complete_data %>% 
+  mutate(weight = case_when(school == "School of Social Sciences" ~ 1,
+                            school == "School of Education" ~ 2,
+                            school == "School of Humanities" ~ 3,
+                            school == "School of Health Sciences" ~ 4,
+                            school == "School of Engineering and Natural Sciences" ~ 5,
+                            school == "more than 1" ~ 6))
+```
+
+
+```{r}
+library(MASS)
+
+model <-
+  polr(
+    factor(start_business) ~ Language + gender + birthage + school + undergrad + marital_status + children + house_location,
+    data = final_data,
+    weights = weight
+  )
+
+summary(model)
+```
+
+
+
+```{r}
+library(sjPlot)
+
+tab_model(model)
+```
+
+```{r}
+
+```
+
+
+
+# plan
+If every answer to our specific questions is an NA then remove that line
+look for individuals that chose the same value for all 6 questions 
